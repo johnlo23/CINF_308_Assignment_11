@@ -1,7 +1,7 @@
 # John Logiudice
 # INF 308 - Fall 2022
 # Assignment 11 - Case Study - Data Structures
-# 13.2
+# 13.3
 
 # Make string library available
 from string import *
@@ -130,12 +130,43 @@ class Ebook:
             self.word_count = count
             self.unique_count = len(self.word_dict)
 
+    # Get the top_num most used words in the word list
+    def get_common_words(self, top_num, word_dict=None):
+        if word_dict is None:
+            word_dict = self.word_dict
+
+        try:
+            top_num = int(top_num)
+        except ValueError as e:
+            print(f"Exception: {e} \ntop_num must be an integer")
+            return None
+
+        # Convert the dictionary to a list of tuples (word, word_count)
+        new_list = list(word_dict.items())
+        # Sort the list by the second item (word_count) in the tuple
+        new_list.sort(reverse=True, key=lambda t: t[1])
+        # Return first top_num item from the list
+        return new_list[:top_num]
+
+
+# Print out a list of words with index numbers
+def print_list(words):
+    for i in range(len(words)):
+        print(f"{i+1}. {words[i]}")
+
 
 def main():
     ebook = Ebook(FILE_NAME)
     ebook.read_lines()
+    print()
     print(f"The total number of words in the book: {ebook.word_count}")
     print(f"The number of different words in the book: {ebook.unique_count}")
+    print()
+    # The number of top words to print
+    get_top_num = 20
+    print(f"The top {get_top_num} most used words in the book are:")
+    # Use list comprehension to pull just the words from the common words list
+    print_list([t[0] for t in ebook.get_common_words(get_top_num)])
 
 
 if __name__ == '__main__':
