@@ -1,12 +1,14 @@
 # John Logiudice
 # INF 308 - Fall 2022
 # Assignment 11 - Case Study - Data Structures
-# 13.3
-
+# 13.4
+import datetime
+import time
 # Make string library available
 from string import *
 
 FILE_NAME = 'MobyDick.txt'
+WORD_LIST = 'CROSSWD.TXT'
 
 
 # Instantiate a word and clean word of extra characters
@@ -18,9 +20,9 @@ class Word:
     # Use the string library to remove punctuation from ends of word
     def strip_punctuation(self, word=None):
         if word is None:
-            return self.word.strip(punctuation)
+            return self.word.strip(punctuation+"‘’”“")
         else:
-            return word.strip(punctuation)
+            return word.strip(punctuation+"‘’”“")
 
     # Use the string library to remove whitespace from ends of word
     def strip_whitespace(self, word=None):
@@ -34,15 +36,10 @@ class Word:
         if word is None:
             word = self.word
 
-        # Attempt to convert the string to a float
-        try:
-            number = float(word)
-        # If there is an error, assume it's a word and return word
-        except ValueError:
-            return word
-        # If there is no error, assume it's a number and return None
-        else:
+        if word[0].isdigit():
             return None
+        else:
+            return word
 
     # process all the cleaning methods and return word
     def clean_word(self, word=None):
@@ -51,6 +48,10 @@ class Word:
 
         word = self.strip_whitespace(word)
         word = self.strip_punctuation(word)
+        # Discard empty strings after strip()
+        if len(word) == 0:
+            return None
+
         word = self.discard_numbers(word)
 
         return word
@@ -77,8 +78,49 @@ class Line:
         line = self.line.lower()
 
         # Consider hyphens as a separator and use str.split() to create list of words
-        self.words = line.replace('—', ' ').split()
+        self.words = line.replace('—', ' ').replace('-', ' ').split()
 
+
+# Load a word list. Identify words in another list that are not in word list
+class WordList:
+
+    def __init__(self, filename):
+        self.filename = filename
+        self.word_list = []
+
+    # Load words from word list file into list
+    def load_words(self, filename=None):
+        if filename is None:
+            filename = self.filename
+
+        with open(filename) as file:
+            # clear the word list before loading words
+            self.word_list.clear()
+            # Iterate over each word in the file
+            for word in file:
+                # Append each word to the word list
+                self.word_list.append(word.rstrip())
+
+    # Compare another word list to the word list, return words not found
+    def not_in_list(self, source_list, word_list=None):
+        if word_list is None:
+            word_list = self.word_list
+
+        # Make copies of each list so original lists are not changed
+        # Sort both lists for search efficiency
+        source_copy = source_list.copy()
+        word_copy = word_list.copy()
+
+        # Iterate of word list
+        for i in range(len(word_copy)):
+            try:
+                # Attempt to remove word from the source list
+                source_copy.remove(word_copy[i])
+            except ValueError:
+                pass
+
+        # Return source list that had known words removed
+        return source_copy
 
 # Instantiate a book, open the file and do analysis
 class Ebook:
@@ -112,7 +154,7 @@ class Ebook:
                         # Use clean method to get each word
                         new_word = new_word.clean_word()
                         # ignore words that were returned as None
-                        if new_word is not None:
+                        if new_word is not None and len(new_word) > 0:
                             # Add word to dictionary and update the count
                             self.word_dict[new_word] = self.word_dict.get(new_word, 0) + 1
 
@@ -148,6 +190,9 @@ class Ebook:
         # Return first top_num item from the list
         return new_list[:top_num]
 
+    def get_all_words(self):
+        return list(self.word_dict.keys())
+
 
 # Print out a list of words with index numbers
 def print_list(words):
@@ -156,18 +201,30 @@ def print_list(words):
 
 
 def main():
+    # Initialize an eBook object
     ebook = Ebook(FILE_NAME)
+    # Load the eBook into memory
     ebook.read_lines()
+
+    # Display analysis
     print()
     print(f"The total number of words in the book: {ebook.word_count}")
     print(f"The number of different words in the book: {ebook.unique_count}")
     print()
-    # The number of top words to print
+
+    # Set the number of most common words to get
     get_top_num = 20
     print(f"The top {get_top_num} most used words in the book are:")
     # Use list comprehension to pull just the words from the common words list
     print_list([t[0] for t in ebook.get_common_words(get_top_num)])
 
+    # Initialize a word list object
+    word_list = WordList(WORD_LIST)
+    # Load the know word list file into memory
+    word_list.load_words()
+    # Display all words that are in the eBook, but not in the word list
+    print(word_list.not_in_list(ebook.get_all_words()))
 
+# Run the main function
 if __name__ == '__main__':
     main()
