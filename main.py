@@ -2,10 +2,10 @@
 # INF 308 - Fall 2022
 # Assignment 11 - Case Study - Data Structures
 # 13.4
-import datetime
-import time
+
 # Make string library available
 from string import *
+import random
 
 FILE_NAME = 'MobyDick.txt'
 WORD_LIST = 'CROSSWD.TXT'
@@ -19,10 +19,13 @@ class Word:
 
     # Use the string library to remove punctuation from ends of word
     def strip_punctuation(self, word=None):
+        # Use built-in punctuation list plus extra characters I noticed in the
+        # eBook file
+        punct = punctuation + "‘’”“£"
         if word is None:
-            return self.word.strip(punctuation+"‘’”“")
+            return self.word.strip(punct)
         else:
-            return word.strip(punctuation+"‘’”“")
+            return word.strip(punct)
 
     # Use the string library to remove whitespace from ends of word
     def strip_whitespace(self, word=None):
@@ -122,6 +125,7 @@ class WordList:
         # Return source list that had known words removed
         return source_copy
 
+
 # Instantiate a book, open the file and do analysis
 class Ebook:
 
@@ -190,8 +194,35 @@ class Ebook:
         # Return first top_num item from the list
         return new_list[:top_num]
 
+    # Get list of unique words from the dictionary
     def get_all_words(self):
+        # Return just the key names which represents each unique word
         return list(self.word_dict.keys())
+
+    # Chose a random word from the eBook in proportion to its frequency
+    def choose_from_hist(self):
+        # Verify first that there is a word count
+        if self.word_count is None:
+            return None
+
+        # Get a random number from 0 to word_count
+        random_number = random.randrange(self.word_count)
+
+        # Initialize a counter
+        count = 0
+
+        # Iterate over each word in the dictionary
+        for word in self.word_dict:
+            # Loop the number of times each word appears
+            for i in range(self.word_dict[word]):
+                # When the counter reaches the random number
+                if count == random_number:
+                    # Return the word
+                    return word
+                count += 1
+
+        return None
+
 
 
 # Print out a list of words with index numbers
@@ -217,13 +248,25 @@ def main():
     print(f"The top {get_top_num} most used words in the book are:")
     # Use list comprehension to pull just the words from the common words list
     print_list([t[0] for t in ebook.get_common_words(get_top_num)])
+    print()
+
+    random_word = ebook.choose_from_hist()
+    print("This word was chosen randomly from the book:")
+    print(random_word)
+    print(f"It was used {ebook.word_dict[random_word]} times.")
+    print()
 
     # Initialize a word list object
     word_list = WordList(WORD_LIST)
     # Load the know word list file into memory
     word_list.load_words()
     # Display all words that are in the eBook, but not in the word list
+    print("List of eBook words not found in the known word list:")
+    print("(this may take a few seconds)")
     print(word_list.not_in_list(ebook.get_all_words()))
+
+
+
 
 # Run the main function
 if __name__ == '__main__':
