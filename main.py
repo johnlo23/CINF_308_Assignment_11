@@ -1,17 +1,20 @@
 # John Logiudice
 # INF 308 - Fall 2022
 # Assignment 11 - Case Study - Data Structures
-# 13.4
+# 13.6
 
 # Make string library available
 from string import *
+
 import random
 
-FILE_NAME = 'MobyDick.txt'
+# Set constants
+# FILE_NAME = 'MobyDick.txt'
+FILE_NAME = 'emma.txt'
 WORD_LIST = 'CROSSWD.TXT'
 
 
-# Instantiate a word and clean word of extra characters
+# Class to create a word object and clean it of extra characters
 class Word:
 
     def __init__(self, word=None):
@@ -39,6 +42,7 @@ class Word:
         if word is None:
             word = self.word
 
+        # If first character of word is a digit, assume a number
         if word[0].isdigit():
             return None
         else:
@@ -49,18 +53,19 @@ class Word:
         if word is None:
             word = self.word
 
+        # Call clean methods
         word = self.strip_whitespace(word)
         word = self.strip_punctuation(word)
+
         # Discard empty strings after strip()
         if len(word) == 0:
             return None
+        else:
+            word = self.discard_numbers(word)
+            return word
 
-        word = self.discard_numbers(word)
 
-        return word
-
-
-# Instantiate a line and extract individual words
+# Class to create a line and extract individual words
 class Line:
 
     def __init__(self, line=None):
@@ -80,11 +85,12 @@ class Line:
         # Convert entire line to lower case
         line = self.line.lower()
 
-        # Consider hyphens as a separator and use str.split() to create list of words
+        # Consider hyphens a separator and use str.split() to create list of words
         self.words = line.replace('—', ' ').replace('-', ' ').split()
 
 
-# Load a word list. Identify words in another list that are not in word list
+# Class to create load a word list. Identify words in another list that are not
+# in word list
 class WordList:
 
     def __init__(self, filename):
@@ -109,24 +115,16 @@ class WordList:
         if word_list is None:
             word_list = self.word_list
 
-        # Make copies of each list so original lists are not changed
-        # Sort both lists for search efficiency
-        source_copy = source_list.copy()
-        word_copy = word_list.copy()
+        # Create sets from the source list and word list
+        source_set = set(source_list)
+        word_set = set(word_list)
 
-        # Iterate of word list
-        for i in range(len(word_copy)):
-            try:
-                # Attempt to remove word from the source list
-                source_copy.remove(word_copy[i])
-            except ValueError:
-                pass
-
-        # Return source list that had known words removed
-        return source_copy
+        # Return a sorted list containing words in the source list that were
+        # not found in the words list
+        return sorted(list(source_set.difference(word_set)))
 
 
-# Instantiate a book, open the file and do analysis
+# Class to create a book, open the file and do analysis
 class Ebook:
 
     def __init__(self, filename):
@@ -147,6 +145,7 @@ class Ebook:
         with open(self.filename, encoding="utf-8") as file:
             # Iterate over each line
             for line in file:
+                # Instantiate a new Line object for each line
                 new_line = Line(line)
                 # If in header or footer, do not process lines
                 if not in_header_footer:
@@ -154,6 +153,7 @@ class Ebook:
                     words = new_line.words
                     # Iterate over each word
                     for word in words:
+                        # Instantiate a new Word object for each word
                         new_word = Word(word)
                         # Use clean method to get each word
                         new_word = new_word.clean_word()
@@ -162,7 +162,7 @@ class Ebook:
                             # Add word to dictionary and update the count
                             self.word_dict[new_word] = self.word_dict.get(new_word, 0) + 1
 
-                            # Increment total count
+                            # Increment total word count
                             count += 1
 
                 # Check for header and footer start and end
@@ -177,10 +177,11 @@ class Ebook:
             self.unique_count = len(self.word_dict)
 
     # Get the top_num most used words in the word list
-    def get_common_words(self, top_num, word_dict=None):
+    def get_common_words(self, top_num=10, word_dict=None):
         if word_dict is None:
             word_dict = self.word_dict
 
+        # Verify an integer was given
         try:
             top_num = int(top_num)
         except ValueError as e:
@@ -219,16 +220,23 @@ class Ebook:
                 if count == random_number:
                     # Return the word
                     return word
-                count += 1
+                else:
+                    # else increment the counter and continue
+                    count += 1
 
         return None
 
 
-
-# Print out a list of words with index numbers
+# Print out a list of words with index numbers and frequency
 def print_list(words):
+    # Get the maximum word length for formatting the output string
+    max_word_len = 0
     for i in range(len(words)):
-        print(f"{i+1}. {words[i]}")
+        max_word_len = max(max_word_len, len(words[i][0]))
+
+    for i in range(len(words)):
+        # Format the output with uniform spaces between the word and frequency
+        print(f"{i+1}.\t{words[i][0]}" + " "*(max_word_len+3-len(words[i][0])) + f"{words[i][1]}")
 
 
 def main():
@@ -247,7 +255,8 @@ def main():
     get_top_num = 20
     print(f"The top {get_top_num} most used words in the book are:")
     # Use list comprehension to pull just the words from the common words list
-    print_list([t[0] for t in ebook.get_common_words(get_top_num)])
+    # print_list([t[0] for t in ebook.get_common_words(get_top_num)])
+    print_list(ebook.get_common_words(get_top_num))
     print()
 
     random_word = ebook.choose_from_hist()
@@ -260,12 +269,15 @@ def main():
     word_list = WordList(WORD_LIST)
     # Load the know word list file into memory
     word_list.load_words()
+
     # Display all words that are in the eBook, but not in the word list
-    print("List of eBook words not found in the known word list:")
-    print("(this may take a few seconds)")
+    # Ask user to hit enter first since the word list may push other output off the screen
+    input("Press <enter> to see a list of eBook words not found in the known word list:")
     print(word_list.not_in_list(ebook.get_all_words()))
 
-
+    # Keep output on the screen until user hits enter
+    print()
+    input("Press <enter> to quit.")
 
 
 # Run the main function
